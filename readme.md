@@ -7,6 +7,11 @@
 
 BlackoutCryRansom is a Python-based ransomware simulation application. It allows for the encryption and decryption of files using RSA encryption. The application provides a simple interface for users to interact with the program and perform the main operations of encrypting and decrypting files in a specific directory. It also handles key pair generation for encryption and decryption purposes.
 
+## ⚠️ Warning
+
+> ‼️‼️ ☠️ ‼️‼️ <strong> This project is intended for educational and ethical use only. It must not be used for unauthorized or malicious activities. The developers are not responsible for any misuse of this software. Ensure compliance with legal and ethical standards before deployment. </strong> 
+
+
 ## Features
 
 - **Encrypt Files**: Encrypt all files in the specified directory using RSA encryption with the public key.
