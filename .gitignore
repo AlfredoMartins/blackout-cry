@@ -2,4 +2,5 @@ __pycache__
 .venv
 temp
 readme.md
-ui/fonts  
+ui/fonts
+secrets

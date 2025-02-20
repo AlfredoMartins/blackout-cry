@@ -1,55 +1,88 @@
-from Crypto.Cipher import PKCS1_OAEP
-from Crypto.PublicKey import RSA
 import os
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 
 class BlackoutCrypto:
     def __init__(self):
-        self.__PRIVATE_FILE_NAME = 'secrets/key.pem'
-        self.__PUBLIC_FILE_NAME = 'secrets/key.pub'
-        
-        self.public_key = None
-        self.private_key = None
+        self.__SECRETS_DIR = 'secrets'
+        self.__PRIVATE_KEY_FILE = os.path.join(self.__SECRETS_DIR, 'private_key.pem')
+        self.__PUBLIC_KEY_FILE = os.path.join(self.__SECRETS_DIR, 'public_key.pem')
 
-    def __generate_key(self, file_name):
-        self.key = RSA.generate(2048)
-        with open(file_name, 'wb') as f:
-            f.write(self.key.export_key('PEM'))
-        return self.key
+        # Ensure the secrets directory exists
+        if not os.path.exists(self.__SECRETS_DIR):
+            os.makedirs(self.__SECRETS_DIR)
 
-    def generate_keys(self):
-        self.private_key = self.__generate_key(self.PRIVATE_FILE_NAME)
-        self.public_key = self.private_key.publickey()
-        with open(self.PUBLIC_FILE_NAME, 'wb') as f:
-            f.write(self.public_key.export_key('PEM'))
-        return self.public_key, self.private_key
+        # Load or generate the key pair
+        self.private_key, self.public_key = self.__load_or_generate_keys()
 
-    def load_keys(self):
-        self.public_key = self.__load_key(self.PUBLIC_FILE_NAME)
-        self.private_key = self.__load_key(self.PRIVATE_FILE_NAME)
-        return self.public_key, self.private_key
+    def __load_or_generate_keys(self):
+        """Load the key pair from files or generate a new pair if they don't exist."""
+        if os.path.exists(self.__PRIVATE_KEY_FILE) and os.path.exists(self.__PUBLIC_KEY_FILE):
+            with open(self.__PRIVATE_KEY_FILE, 'rb') as key_file:
+                private_key = serialization.load_pem_private_key(
+                    key_file.read(),
+                    password=None,
+                )
+            with open(self.__PUBLIC_KEY_FILE, 'rb') as key_file:
+                public_key = serialization.load_pem_public_key(
+                    key_file.read(),
+                )
+        else:
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+            )
+            public_key = private_key.public_key()
 
-    def __load_key(self, file_name):
-        if os.path.exists(file_name):
-            with open(file_name, 'rb') as file:
-                key = RSA.import_key(file.read())
-                return key
-        return None
+            # Save the private key
+            with open(self.__PRIVATE_KEY_FILE, 'wb') as key_file:
+                key_file.write(private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                ))
+
+            # Save the public key
+            with open(self.__PUBLIC_KEY_FILE, 'wb') as key_file:
+                key_file.write(public_key.public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo
+                ))
+
+        return private_key, public_key
 
     def encrypt(self, message):
-        if not self.public_key:
-            self.load_keys()
-        cipher = PKCS1_OAEP.new(self.public_key)
-        cipher_text = cipher.encrypt(message.encode())
-        return cipher_text
+        """Encrypt a message using the public key."""
+        if not isinstance(message, bytes):
+            message = message.encode()
+        encrypted_message = self.public_key.encrypt(
+            message,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        return encrypted_message
 
-    def decrypt(self, cipher_text):
-        if not self.private_key:
-            self.load_keys()
-        cipher = PKCS1_OAEP.new(self.private_key)
-        message = cipher.decrypt(cipher_text)
-        return message.decode()
+    def decrypt(self, encrypted_message):
+        """Decrypt a message using the private key."""
+        decrypted_message = self.private_key.decrypt(
+            encrypted_message,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        return decrypted_message.decode()  # Convert bytes back to string
 
     def get_public_key(self):
-        if not self.public_key:
-            self.load_keys()
+        """Return the public key (for external use if needed)."""
         return self.public_key
+
+    def get_private_key(self):
+        """Return the private key (for external use if needed)."""
+        return self.private_key
