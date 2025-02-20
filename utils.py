@@ -5,6 +5,26 @@ import itertools
 
 project_dir = Path(__name__).resolve().parent
 
+def read_as_binary(filename):
+    with open(filename, "rb") as file:
+        binary_data = file.read()
+    return binary_data
+
+def write_as_binary(filename, data):
+    with open(filename, "wb") as file:
+        file.write(data)
+    return file
+
+def read_as_non_binary(filename):
+    with open(filename, "r") as file:
+        text_data = file.read()
+    return text_data
+
+def write_as_non_binary(filename, data):
+    with open(filename, "w") as file:
+        file.write(data)
+    return file
+
 def get_dir():
     global data
     foldername = 'temp'
