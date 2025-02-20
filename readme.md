@@ -1,5 +1,5 @@
 
-# BlackoutCryRansom Documentation
+# BlackoutCryRansom
 
 ![Menu Screenshot](screenshots/image.png)
 
