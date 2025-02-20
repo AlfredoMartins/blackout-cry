@@ -31,7 +31,13 @@ To run the application, make sure you have the following:
 To run the application:
 
 ```bash
-python blackout_cry_ransom.py
+python main.py
+```
+
+To run the application (UI):
+
+```bash
+python ui.py
 ```
 
 ### Menu Options
